@@ -1,5 +1,5 @@
 .idea/
-./calog
+calog
 log/*.log
 go.mod
 go.sum 
