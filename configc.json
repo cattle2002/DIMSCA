@@ -1,0 +1,21 @@
+{
+ "PlatformUrl": "ws://47.108.61.229:9081/api/websocket/1",
+ "KeyPair": {
+  "AutoConfig": false,
+  "Algorithm": "rsa",
+  "Bits": 2048,
+  "PublicKeyPath": "public.pub",
+  "PrivateKeyPath": "private.key"
+ },
+ "Local": {
+  "Host": "127.0.0.1",
+  "EthHost": "127.0.0.1",
+  "Port": 5517,
+  "User": "zcl01",
+  "Password": "zcl123456",
+  "CurrentDir": "D:\\workdir\\DIMSCA",
+  "IDentity": "Slave",
+  "LoggerLevel": "trace",
+  "NoConsole": false
+ }
+}
