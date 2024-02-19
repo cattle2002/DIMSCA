@@ -74,7 +74,7 @@ func CertGetFromSlaveRetHandle() error {
 
 		instructor := certGetFromSlaveRetInstructor(req.Payload.ID, cipherPrivateKey, protocol.SuccessCode, pem, ca.TimeStamp)
 		//todo 这个是个问题,报文没有加密就走过去了
-		log.Logger.Errorf("write:%s", string(instructor))
+		//log.Logger.Errorf("write:%s", string(instructor))
 		err = CoreServerConn.WriteMessage(websocket.TextMessage, instructor)
 		if err != nil {
 			return err
