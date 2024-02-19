@@ -9,6 +9,7 @@ import (
 	"io"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -146,4 +147,16 @@ func Int64ToBytes(num uint64) []byte {
 }
 func BytesToInt64(byteData []byte) uint64 {
 	return binary.LittleEndian.Uint64(byteData)
+}
+func GetTimeStampFromPK(pk string, code string) (string, int64, error) {
+	lastIndex := strings.LastIndex(pk, code)
+	if lastIndex != -1 {
+		// 如果找到 "-"，则截取该位置之后的子字符串
+		result := pk[lastIndex+1:]
+		tp, err := strconv.ParseInt(result, 10, 64)
+		return pk[:lastIndex+1], tp, err
+	} else {
+		// 如果未找到 "-"，则返回整个字符串
+		panic("Fatal error")
+	}
 }

@@ -12,11 +12,11 @@ import (
 	"strconv"
 )
 
-func main() {}
+//func main() {}
 
 // go build  -o libca.dll  -buildmode=c-shared main.go
-//func main() {
-//}
+func main() {
+}
 
 func IniChannel() {
 	//utils.Clear()
@@ -34,7 +34,6 @@ func IniChannel() {
 
 //export CaRunning
 func CaRunning() {
-
 	IniChannel()
 	// err := config.NewConfig("./lib/config.json")
 	err := config.NewConfig(pkg.ConfigFileName)

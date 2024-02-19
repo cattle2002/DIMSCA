@@ -3,6 +3,7 @@ package handle
 import (
 	"DIMSCA/config"
 	"DIMSCA/log"
+	"DIMSCA/model"
 	"DIMSCA/pkg"
 	"DIMSCA/protocol"
 	"DIMSCA/utils"
@@ -10,6 +11,7 @@ import (
 	"errors"
 	"github.com/gorilla/websocket"
 	"github.com/wenzhenxi/gorsa"
+	"strconv"
 )
 
 // certGetFromSlaveReqInstructor 创建从证书的证书请求(发送获取加密私钥的请求)
@@ -65,8 +67,14 @@ func CertGetFromSlaveRetHandle() error {
 		if err != nil {
 			return err
 		}
-		instructor := certGetFromSlaveRetInstructor(req.Payload.ID, cipherPrivateKey, protocol.SuccessCode, pem)
+		ca, err := model.FindLastCA(config.ConfCa.Local.User)
+		if err != nil {
+			return err
+		}
+
+		instructor := certGetFromSlaveRetInstructor(req.Payload.ID, cipherPrivateKey, protocol.SuccessCode, pem, ca.TimeStamp)
 		//todo 这个是个问题,报文没有加密就走过去了
+		log.Logger.Errorf("write:%s", string(instructor))
 		err = CoreServerConn.WriteMessage(websocket.TextMessage, instructor)
 		if err != nil {
 			return err
@@ -77,14 +85,18 @@ func CertGetFromSlaveRetHandle() error {
 	}
 
 }
-func certGetFromSlaveRetInstructor(id int64, cipherPrivateKey string, retCode int, publicKey string) []byte {
+func certGetFromSlaveRetInstructor(id int64, cipherPrivateKey string, retCode int, publicKey string, timeStamp int64) []byte {
 	var res protocol.CertGetFromSlaveRet
 	res.Cmd = string(protocol.GetCertForSlaveRet)
 	res.Program = string(protocol.Program)
 	res.RetCode = retCode
 	res.Payload.ID = id
 	res.Payload.CipherPrivateKey = cipherPrivateKey
+	//publicKey =  p
+	formatInt64 := strconv.FormatInt(timeStamp, 10)
+	publicKey = publicKey + formatInt64
 	res.Payload.PublicKey = publicKey
+	res.Payload.TimeStamp = timeStamp
 	marshal, _ := json.Marshal(res)
 	return marshal
 }

@@ -9,7 +9,6 @@ import (
 	"DIMSCA/utils"
 	"encoding/json"
 	"github.com/wenzhenxi/gorsa"
-	"time"
 )
 
 func HandleLoginMsgCh() {
@@ -37,8 +36,14 @@ func HandleLoginMsgCh() {
 					return
 				}
 				pkg.DBSK = decrypt
-				pkg.DBPK = req.Payload.PublicKey
-				pkg.DBTimeStamp = time.Now().UnixMilli()
+				pk, tp, err2 := utils.GetTimeStampFromPK(req.Payload.PublicKey, "-")
+				if err2 != nil {
+					log.Logger.Errorf("获取公钥里面携带的时间戳错误:%s", err2.Error())
+					return
+				}
+				//pkg.DBPK = req.Payload.PublicKey
+				pkg.DBPK = pk
+				pkg.DBTimeStamp = tp
 				err = utils.WritePem(pkg.DBPK, pkg.DBSK,
 					utils.GetPublicKeyPemPosition(config.ConfCa.Local.CurrentDir, config.ConfCa.KeyPair.PublicKeyPath),
 					utils.GetPrivateKeyPemPosition(config.ConfCa.Local.CurrentDir, config.ConfCa.KeyPair.PrivateKeyPath))
@@ -46,7 +51,7 @@ func HandleLoginMsgCh() {
 					log.Logger.Errorf("写入公私钥到文件失败:%s", err.Error())
 					return
 				}
-				log.Logger.Info("密钥对写入文件成功")
+				log.Logger.Infof("密钥对写入文件成功:证书生成时间戳:%d,证书生成时间戳Date:%s", tp, utils.DateFormat(tp))
 				err = model.CreateWrapper(config.ConfCa.Local.User, pkg.DBTimeStamp, pkg.DBPK, pkg.DBSK)
 				if err != nil {
 					log.Logger.Errorf("同步公私钥到数据库失败:%s", err.Error())

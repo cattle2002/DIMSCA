@@ -55,6 +55,8 @@ type CertGetFromSlaveRetPayload struct {
 	ID               int64  `json:"ID"`
 	CipherPrivateKey string `json:"CipherPrivateKey"`
 	PublicKey        string `json:"PublicKey"`
+	///todo 新增部分
+	TimeStamp int64 `json:"TimeStamp"`
 }
 type CertGetFromSlaveRet struct {
 	Cmd     string                     `json:"Cmd"`
@@ -67,6 +69,8 @@ type CertGetToMasterRetsPayload struct {
 	CipherPrivateKey string `json:"CipherPrivateKey"`
 	Username         string `json:"Username"`
 	PublicKey        string `json:"PublicKey"`
+	////note 新增部分,添加timeStamp
+	TimeStamp int64 `json:"TimeStamp"`
 }
 type CertGetToMasterRets struct {
 	Cmd     string                     `json:"Cmd"`
