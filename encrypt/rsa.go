@@ -11,6 +11,9 @@ import (
 )
 
 func GenRsa() (string, string, int64, error) {
+	if config.ConfCa.KeyPair.Bits == 0 {
+		config.ConfCa.KeyPair.Bits = 2048
+	}
 	resp, err := gorsa.GenerateKey(config.ConfCa.KeyPair.Bits)
 	if err != nil {
 		return "", "", 0, err

@@ -2,6 +2,7 @@ package handle
 
 import (
 	"DIMSCA/config"
+	"DIMSCA/encrypt"
 	"DIMSCA/log"
 	"DIMSCA/model"
 	"DIMSCA/pkg"
@@ -38,13 +39,15 @@ func certGetToMasterRet() (*protocol.CertGetToMasterRets, error) {
 
 }
 func CertGetFromSlaveRetHandle() error {
+	var cipherPrivateKey string
+	var err error
 	//todo 判断当前身份是否已经确定
 	var req protocol.CertGetFromSlaveRes
 	if config.ConfCa.Local.IDentity == "" {
 		return errors.New("机器身份没有确认")
 	}
 	v := <-CertGetFromSlaveRetCh
-	err := json.Unmarshal(v, &req)
+	err = json.Unmarshal(v, &req)
 	if err != nil {
 		log.Logger.Errorf("反序列化失败:%s", err.Error())
 		return err
@@ -58,10 +61,18 @@ func CertGetFromSlaveRetHandle() error {
 	}
 	//todo 使用Rsa公钥类型然后进行加密,
 	if req.Payload.PublicKeyAgoType == config.ConfCa.KeyPair.Algorithm {
-		cipherPrivateKey, err := gorsa.PublicEncrypt(skPem, req.Payload.PublicKey)
-		if err != nil {
-			log.Logger.Errorf("Rsa 公钥加密失败:%s", err.Error())
-			return err
+		if req.Payload.PublicKeyAgoType == pkg.SM2 {
+			cipherPrivateKey, err = encrypt.Sm2Encrypt(req.Payload.PublicKey, []byte(skPem))
+			if err != nil {
+				log.Logger.Errorf("Sm2 公钥加密失败:%s", err.Error())
+				return err
+			}
+		} else if req.Payload.PublicKeyAgoType == pkg.RSA {
+			cipherPrivateKey, err = gorsa.PublicEncrypt(skPem, req.Payload.PublicKey)
+			if err != nil {
+				log.Logger.Errorf("Rsa 公钥加密失败:%s", err.Error())
+				return err
+			}
 		}
 		pem, err := utils.GetPublicKeyPem(config.ConfCa.Local.CurrentDir, config.ConfCa.KeyPair.PublicKeyPath)
 		if err != nil {

@@ -2,19 +2,23 @@ package handle
 
 import (
 	"DIMSCA/config"
+	"DIMSCA/encrypt"
 	"DIMSCA/log"
 	"DIMSCA/model"
 	"DIMSCA/pkg"
 	"DIMSCA/protocol"
 	"DIMSCA/utils"
+	"encoding/base64"
 	"encoding/json"
 	"github.com/wenzhenxi/gorsa"
 )
 
 func HandleLoginMsgCh() {
 	v := <-LoginMsgCh
+	var decryptSk string
+	var err error
 	var res protocol.LoginRes
-	err := json.Unmarshal(v, &res)
+	err = json.Unmarshal(v, &res)
 	if err != nil {
 		log.Logger.Errorf("json unmarshal error:%s", err.Error())
 		return
@@ -29,13 +33,29 @@ func HandleLoginMsgCh() {
 					log.Logger.Errorf("解析消息错误:%s", err2.Error())
 					return
 				}
-				//todo 使用公私钥进行解密
-				decrypt, err := gorsa.PriKeyDecrypt(req.Payload.CipherPrivateKey, pkg.LoginSk)
-				if err != nil {
-					log.Logger.Errorf("Gorsa 私钥解密失败:%s", err.Error())
-					return
+
+				if config.ConfCa.KeyPair.Algorithm == pkg.SM2 {
+					decryptSk, err = encrypt.Sm2Decrypt(pkg.LoginSk, []byte(req.Payload.CipherPrivateKey))
+					if err != nil {
+						log.Logger.Errorf("Sm2 私钥解密失败:%s", err.Error())
+						return
+					}
+					tmp, err := base64.StdEncoding.DecodeString(decryptSk)
+					if err != nil {
+						log.Logger.Errorf("Sm2 私钥Base64 解密失败:%s", err.Error())
+						return
+					}
+					decryptSk = string(tmp)
+				} else if config.ConfCa.KeyPair.Algorithm == pkg.RSA {
+					//todo 使用公私钥进行解密
+					decryptSk, err = gorsa.PriKeyDecrypt(req.Payload.CipherPrivateKey, pkg.LoginSk)
+					if err != nil {
+						log.Logger.Errorf("Gorsa 私钥解密失败:%s", err.Error())
+						return
+					}
 				}
-				pkg.DBSK = decrypt
+
+				pkg.DBSK = decryptSk
 				pk, tp, err2 := utils.GetTimeStampFromPK(req.Payload.PublicKey, "-")
 				if err2 != nil {
 					log.Logger.Errorf("获取公钥里面携带的时间戳错误:%s", err2.Error())

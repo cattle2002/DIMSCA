@@ -153,8 +153,12 @@ func GetTimeStampFromPK(pk string, code string) (string, int64, error) {
 	if lastIndex != -1 {
 		// 如果找到 "-"，则截取该位置之后的子字符串
 		result := pk[lastIndex+1:]
+		if strings.Contains(result, "\n") {
+			result = pk[lastIndex+2:]
+		}
 		tp, err := strconv.ParseInt(result, 10, 64)
-		return pk[:lastIndex+1], tp, err
+
+		return pk[:lastIndex+2], tp, err
 	} else {
 		// 如果未找到 "-"，则返回整个字符串
 		panic("Fatal error")

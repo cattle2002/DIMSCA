@@ -4,8 +4,14 @@ const (
 	ConfigFileName = "configc.json"
 	Master         = "Master"
 	Slave          = "Slave"
+	RSA            = "rsa"
+	SM2            = "sm2"
+	//DefaultCAAlgo  = "sm2"
+	Sm2DefaultKey = "3132333435363738" //16进制   12345678
+
 )
 
+var CurrentCAAlgoType string
 var (
 	// 证书登录的时候，无论是从数据库拉取的密钥对,还是临时生成的密钥对 都先经过这里过滤一次,最后入库肯定是这里的密钥对
 	//1.当程序里第一个没有证书

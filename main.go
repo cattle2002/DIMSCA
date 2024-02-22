@@ -8,18 +8,13 @@ import (
 	"DIMSCA/model"
 	"DIMSCA/pkg"
 	"DIMSCA/service"
+	"DIMSCA/utils"
 	"net/http"
 	"strconv"
 )
 
-//func main() {}
-
-// go build  -o libca.dll  -buildmode=c-shared main.go
-func main() {
-}
-
 func IniChannel() {
-	//utils.Clear()
+	utils.Clear()
 	config.ConfigIDenUpdateCh = make(chan []byte, 10)
 	handle.MsgBusCh = make(chan []byte, 10)
 	handle.CertReMakeCh = make(chan []byte, 10)
@@ -32,8 +27,12 @@ func IniChannel() {
 	handle.WsCAManager = make(chan bool, 10)
 }
 
+// go build  -o libca.dll  -buildmode=c-shared main.go
+//func main() {
+//}
 //export CaRunning
-func CaRunning() {
+
+func main() {
 	IniChannel()
 	// err := config.NewConfig("./lib/config.json")
 	err := config.NewConfig(pkg.ConfigFileName)

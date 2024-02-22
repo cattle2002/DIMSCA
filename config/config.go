@@ -2,9 +2,11 @@ package config
 
 import (
 	"DIMSCA/log"
+	"DIMSCA/pkg"
 	"DIMSCA/utils"
 	"encoding/json"
 	"os"
+	"strings"
 )
 
 type Config struct {
@@ -13,11 +15,12 @@ type Config struct {
 	Local       Local   `json:"Local"`
 }
 type KeyPair struct {
-	AutoConfig     bool   `json:"AutoConfig"`
-	Algorithm      string `json:"Algorithm"`      //证书的生成算法rsa
-	Bits           int    `json:"Bits"`           //证书生成的时候算法的位数有2096和1048
-	PublicKeyPath  string `json:"PublicKeyPath"`  //私钥的存放路径
-	PrivateKeyPath string `json:"PrivateKeyPath"` //公钥的存放路径
+	AutoConfig         bool   `json:"AutoConfig"`
+	Algorithm          string `json:"Algorithm"`      //证书的生成算法rsa
+	Bits               int    `json:"Bits"`           //证书生成的时候算法的位数有2096和1048
+	PublicKeyPath      string `json:"PublicKeyPath"`  //私钥的存放路径
+	PrivateKeyPath     string `json:"PrivateKeyPath"` //公钥的存放路径
+	PrivateKeyStoreKey string `json:"PrivateKeyStoreKey"`
 }
 
 type Local struct {
@@ -45,6 +48,12 @@ func NewConfig(configPath string) (err error) {
 		return err
 	}
 	ConfCa = conf
+	ConfCa.KeyPair.Algorithm = strings.ToLower(ConfCa.KeyPair.Algorithm)
+	if ConfCa.KeyPair.Algorithm != pkg.SM2 && ConfCa.KeyPair.Algorithm != pkg.RSA {
+		panic("配置文件证书算法错误")
+	}
+	pkg.CurrentCAAlgoType = ConfCa.KeyPair.Algorithm
+
 	log.NoConsole = ConfCa.Local.NoConsole
 	log.LoggerLevel = ConfCa.Local.LoggerLevel
 	return nil

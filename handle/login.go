@@ -41,13 +41,14 @@ func login() error {
 		log.Logger.Trace("数据库没有用户密钥对,正在生成中...")
 		//todo 创建临时公钥
 		//todo 生成临时公私钥,保存到内存里面 只允许RSA
-		pk, sk, now, err := encrypt.GenRsa()
+		pk, sk, now, err := encrypt.GenCA()
 		if err != nil {
 			return errors.New("生成公私钥失败")
 		}
 		pkg.LoginPk = pk
 		pkg.LoginSk = sk
 		pkg.CATimeStamp = now
+
 		log.Logger.Infof("证书登录携带的密钥对的时间戳:%s", utils.DateFormat(pkg.CATimeStamp))
 		b := loginReqInstructor(pkg.CATimeStamp)
 		SSendMsg(b)
