@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"github.com/tjfoc/gmsm/sm2"
 	"github.com/tjfoc/gmsm/x509"
 	"time"
@@ -69,4 +70,37 @@ func Sm2Decrypt(sk string, data []byte) (string, error) {
 		toString := base64.StdEncoding.EncodeToString(decrypt)
 		return toString, nil
 	}
+}
+
+func Sm2Sign(sk string, key string, msg []byte) (string, error) {
+	tmpKey, err := hex.DecodeString(key)
+	if err != nil {
+		return "", err
+	}
+	privateKey, err := x509.ReadPrivateKeyFromPem([]byte(sk), tmpKey)
+	if err != nil {
+		return "", err
+	}
+	sign, err := privateKey.Sign(rand.Reader, msg, nil)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(sign), nil
+}
+func Sm2Verify(pk string, signData string, msg string) error {
+	pem, err := x509.ReadPublicKeyFromPem([]byte(pk))
+	if err != nil {
+		return err
+	}
+	decodeString, err := base64.StdEncoding.DecodeString(signData)
+	if err != nil {
+		return err
+	}
+	verify := pem.Verify([]byte(msg), decodeString)
+	if verify {
+		return nil
+	} else {
+		return errors.New("verify failed")
+	}
+
 }
