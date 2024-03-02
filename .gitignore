@@ -6,11 +6,13 @@ go.sum
 cert.db
 private.key
 public.pub
-libca.h
-libca.dll
 testx/
 main2.go
 libcaplat.h
 libcaplat.dll
 libencrypt.h
-libencrypt.dll  
+libencrypt.dll
+libca.h
+libca.dll
+libencrypt.so
+libcaplat.so
