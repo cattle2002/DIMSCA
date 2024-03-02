@@ -19,6 +19,7 @@ import (
 	"github.com/wumansgy/goEncrypt/aes"
 )
 
+//export  GenSm2
 func GenSm2() (string, string, int64, error) {
 
 	if config.ConfCa.KeyPair.PrivateKeyStoreKey == "" {
@@ -62,6 +63,7 @@ type PTBSCSign struct {
 	SignData   string `json:"SignData"`
 }
 
+//export   Sm2Encrypt
 func Sm2Encrypt(pk string, data []byte) (string, error) {
 	publicKey, err := x509.ReadPublicKeyFromPem([]byte(pk))
 	if err != nil {
@@ -77,6 +79,8 @@ func Sm2Encrypt(pk string, data []byte) (string, error) {
 }
 
 // 这个函数只涉及到公钥加密,不需要私钥签名
+
+//export  GrantPermissionSign
 func GrantPermissionSign(pubPem *C.char, ptbscStr *C.char) *C.char {
 	var ptbsc PTBSC
 	gpubPem := C.GoString(pubPem)
@@ -104,6 +108,8 @@ func GrantPermissionSign(pubPem *C.char, ptbscStr *C.char) *C.char {
 	}
 	return C.CString(rsaEncrypt)
 }
+
+//export  GrantPermissionSignVerify
 func GrantPermissionSignVerify(privPem *C.char, cipherptbscStr *C.char, algo *C.char) *C.char {
 	//var ptbsc PTBSC
 	gprivPem := C.GoString(privPem)
@@ -129,6 +135,7 @@ func GrantPermissionSignVerify(privPem *C.char, cipherptbscStr *C.char, algo *C.
 	}
 }
 
+//export  ConfirmSign
 func ConfirmSign(sk *C.char, ptbscStr *C.char, algo *C.char, key *C.char) *C.char {
 	var ptbscSign PTBSCSign
 	var ptbsc PTBSC
@@ -189,6 +196,8 @@ func ConfirmSign(sk *C.char, ptbscStr *C.char, algo *C.char, key *C.char) *C.cha
 	toString := base64.StdEncoding.EncodeToString(ptbscSignData)
 	return C.CString(toString)
 }
+
+//export  ConfirmVerify
 func ConfirmVerify(pk *C.char, ptbscSignData *C.char, algo *C.char) *C.char {
 	var ptbscSign PTBSCSign
 	var ptbsc PTBSC
@@ -258,6 +267,8 @@ func ConfirmVerify(pk *C.char, ptbscSignData *C.char, algo *C.char) *C.char {
 }
 
 // aes   sm4
+//
+//export  SymmtricKeyEncrypt_plus
 func SymmtricKeyEncrypt_plus(data *C.char, size C.int, key *C.char, algo *C.char) *C.char {
 	gdata := C.GoBytes(unsafe.Pointer(data), size)
 	gkey, err := hex.DecodeString(C.GoString(key))
@@ -289,6 +300,7 @@ func SymmtricKeyEncrypt_plus(data *C.char, size C.int, key *C.char, algo *C.char
 	}
 }
 
+//export  SymmtricKeyDecrypt_plus
 func SymmtricKeyDecrypt_plus(cipherData *C.char, key *C.char, algo *C.char) *C.char {
 
 	// gdata := C.GoBytes(unsafe.Pointer(cipherData), size)
@@ -330,6 +342,7 @@ type DoubleStruct struct {
 	PrivateKeyJsonSignData string `json:"PrivateKeyJsonSignData"`
 }
 
+//export  AsymmetricEncryptDoubleSign
 func AsymmetricEncryptDoubleSign(pk *C.char, sk *C.char, ptbscStr *C.char, pkAlgo *C.char, skAlgo *C.char, skStorePwd *C.char) *C.char {
 	var doubleStruct DoubleStruct
 	gpk := C.GoString(pk)
@@ -418,7 +431,8 @@ func AsymmetricEncryptDoubleSign(pk *C.char, sk *C.char, ptbscStr *C.char, pkAlg
 }
 
 // todo 等待测试 解密动态库似乎有点问题
-
+//
+//export  AsymmetricDecryptDoubleSign
 func AsymmetricDecryptDoubleSign(pk *C.char, sk *C.char, doubleStructStr *C.char, pkAlgo *C.char, skAlgo *C.char) *C.char {
 	gpk := C.GoString(pk)
 	gsk := C.GoString(sk)
@@ -484,4 +498,96 @@ func AsymmetricDecryptDoubleSign(pk *C.char, sk *C.char, doubleStructStr *C.char
 	}
 	s2 := base64.StdEncoding.EncodeToString([]byte(s))
 	return C.CString(s2)
+}
+
+type PlatformCA struct {
+	Publickey  string `json:"Publickey"`
+	PrivateKey string `json:"PrivateKey"`
+	TimeStamp  int64  `json:"TimeStamp"`
+}
+
+//export    GenPlatformCA
+func GenPlatformCA(algo *C.char, hexStoreKey *C.char) *C.char {
+	galgo := C.GoString(algo)
+	if galgo != "sm2" && galgo != "rsa" {
+		return C.CString("DIMSCASO-ERROR:only support rsa and sm2")
+	}
+	ghexStoreKey := C.GoString(hexStoreKey)
+	var pca PlatformCA
+	if galgo == "sm2" {
+		pk, sk, timeStamp, err := encrypt.GenSm2C(ghexStoreKey)
+		if err != nil {
+			return C.CString("DIMSCASO-ERROR:GenSm2 error:%s" + err.Error())
+		}
+		pca.Publickey = pk
+		pca.PrivateKey = sk
+		pca.TimeStamp = timeStamp
+		marshal, err := json.Marshal(pca)
+		if err != nil {
+			return C.CString("DIMSCASO-ERROR:GenSm2 error:%s" + err.Error())
+		}
+		return C.CString(string(marshal))
+	}
+	pk, sk, timeStamp, err := encrypt.GenRsa()
+	if err != nil {
+		return C.CString("DIMSCASO-ERROR:GenSm2 error:%s" + err.Error())
+	}
+	pca.Publickey = pk
+	pca.PrivateKey = sk
+	pca.TimeStamp = timeStamp
+	marshal, err := json.Marshal(pca)
+	if err != nil {
+		return C.CString("DIMSCASO-ERROR:GenRsa error:%s" + err.Error())
+	}
+	return C.CString(string(marshal))
+}
+
+//export  PlatformConfirm
+func PlatformConfirm(algo *C.char, privKey *C.char, confirmStr *C.char, hexStoreKey *C.char) *C.char {
+	galgo := C.GoString(algo)
+	if galgo != "sm2" && galgo != "rsa" {
+		return C.CString("DIMSCASO-ERROR:only support rsa and sm2")
+	}
+	gprivKey := C.GoString(privKey)
+	ghexStoreKey := C.GoString(hexStoreKey)
+	gconfirmStr := C.GoString(confirmStr)
+	if galgo == "sm2" {
+		sign, err := encrypt.Sm2Sign(gprivKey, ghexStoreKey, []byte(gconfirmStr))
+		if err != nil {
+			return C.CString("DIMSCASO-ERROR:Sm2Sign error:%s" + err.Error())
+		}
+		return C.CString(sign)
+	}
+	rsaSign, err := gorsa.SignSha256WithRsa(gconfirmStr, gprivKey)
+	if err != nil {
+		return C.CString("DIMSCASO-ERROR:rsaSign error:%s" + err.Error())
+	}
+	return C.CString(rsaSign)
+}
+
+//export  PlatformGrant
+func PlatformGrant(algo *C.char, publicKey *C.char, msgBase64 *C.char, signData *C.char) *C.char {
+	gsignData := C.GoString(signData)
+	galgo := C.GoString(algo)
+	if galgo != "sm2" && galgo != "rsa" {
+		return C.CString("DIMSCASO-ERROR:only support rsa and sm2")
+	}
+	gmsgBase64 := C.GoString(msgBase64)
+	ggmsg, err := base64.StdEncoding.DecodeString(gmsgBase64)
+	if err != nil {
+		return C.CString("DIMSCASO-ERROR:base64.StdEncoding.DecodeString error:%s" + err.Error())
+	}
+	gpublicKey := C.GoString(publicKey)
+	if galgo == "sm2" {
+		err := encrypt.Sm2Verify(gpublicKey, gsignData, string(ggmsg))
+		if err != nil {
+			return C.CString("DIMSCASO-ERROR:Sm2Verify error:%s" + err.Error())
+		}
+		return C.CString("DIMSCASO-Success")
+	}
+	err = gorsa.VerifySignSha256WithRsa(string(ggmsg), gsignData, gpublicKey)
+	if err != nil {
+		return C.CString("DIMSCASO-ERROR:VerifySignSha256WithRsa error:%s" + err.Error())
+	}
+	return C.CString("DIMSCASO-Success")
 }

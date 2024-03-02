@@ -12,6 +12,27 @@ import (
 	"time"
 )
 
+func GenSm2C(hexStoreKey string) (string, string, int64, error) {
+
+	tmpKey, err := hex.DecodeString(hexStoreKey)
+	if err != nil {
+		return "", "", 0, err
+	}
+	Kp, err := sm2.GenerateKey(rand.Reader)
+	if err != nil {
+		return "", "", 0, err
+	}
+	Pk, err := x509.WritePublicKeyToPem(&Kp.PublicKey)
+	if err != nil {
+		return "", "", 0, err
+	}
+
+	Sk, err := x509.WritePrivateKeyToPem(Kp, tmpKey)
+	if err != nil {
+		return "", "", 0, err
+	}
+	return string(Pk), string(Sk), time.Now().UnixMilli(), nil
+}
 func GenSm2() (string, string, int64, error) {
 
 	if config.ConfCa.KeyPair.PrivateKeyStoreKey == "" {
