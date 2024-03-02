@@ -10,3 +10,7 @@ libca.h
 libca.dll
 testx/
 main2.go
+libcaplat.h
+libcaplat.dll
+libencrypt.h
+libencrypt.dll  

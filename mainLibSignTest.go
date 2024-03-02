@@ -183,10 +183,25 @@ func plat_test() {
 	//fmt.Println(ca.Publickey)
 	//fmt.Println(ca.PrivateKey)
 	//fmt.Println(ca.TimeStamp)
-	confirm := PlatformConfirm(C.CString("rsa"), C.CString(ca.PrivateKey), C.CString("12345678"), C.CString("3132333435363738"))
+	confirm := PlatformConfirmX(C.CString("rsa"), C.CString(ca.PrivateKey), C.CString("12345678"), C.CString("3132333435363738"))
 	toString := base64.StdEncoding.EncodeToString([]byte("12345678"))
-	grant := PlatformGrant(C.CString("rsa"), C.CString(ca.Publickey), C.CString(toString), confirm)
+	grant := PlatformGrantX(C.CString("rsa"), C.CString(ca.Publickey), C.CString(toString), confirm)
 	fmt.Println(C.GoString(grant))
+}
+func plat_test2() {
+	var ca PlatformCA
+	ca1 := GenPlatformCA(C.CString("sm2"), C.CString("3132333435363738"))
+	err := json.Unmarshal([]byte(C.GoString(ca1)), &ca)
+	if err != nil {
+		panic(err)
+	}
+	toString := base64.StdEncoding.EncodeToString([]byte("gongzhaowei"))
+	grant := PlatGrant(C.CString("sm2"), C.CString(ca.Publickey), C.CString(toString))
+	//fmt.Println(C.GoString(grant))
+	confirm := PlatConfirm(C.CString("sm2"), C.CString(ca.PrivateKey), grant, C.CString("3132333435363738"))
+	//fmt.Println(C.GoString(confirm))
+	decodeString, err := base64.StdEncoding.DecodeString(C.GoString(confirm))
+	fmt.Println(string(decodeString), err)
 }
 
 func main() {
@@ -198,5 +213,6 @@ func main() {
 	//Sm4SymmtricKeyEncryptPlus_test()
 	//AsymmetricEncryptDoubleSign_test()
 	//te()
-	plat_test()
+	//plat_test()
+	plat_test2()
 }

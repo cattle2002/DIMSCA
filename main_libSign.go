@@ -506,44 +506,8 @@ type PlatformCA struct {
 	TimeStamp  int64  `json:"TimeStamp"`
 }
 
-//export    GenPlatformCA
-func GenPlatformCA(algo *C.char, hexStoreKey *C.char) *C.char {
-	galgo := C.GoString(algo)
-	if galgo != "sm2" && galgo != "rsa" {
-		return C.CString("DIMSCASO-ERROR:only support rsa and sm2")
-	}
-	ghexStoreKey := C.GoString(hexStoreKey)
-	var pca PlatformCA
-	if galgo == "sm2" {
-		pk, sk, timeStamp, err := encrypt.GenSm2C(ghexStoreKey)
-		if err != nil {
-			return C.CString("DIMSCASO-ERROR:GenSm2 error:%s" + err.Error())
-		}
-		pca.Publickey = pk
-		pca.PrivateKey = sk
-		pca.TimeStamp = timeStamp
-		marshal, err := json.Marshal(pca)
-		if err != nil {
-			return C.CString("DIMSCASO-ERROR:GenSm2 error:%s" + err.Error())
-		}
-		return C.CString(string(marshal))
-	}
-	pk, sk, timeStamp, err := encrypt.GenRsa()
-	if err != nil {
-		return C.CString("DIMSCASO-ERROR:GenSm2 error:%s" + err.Error())
-	}
-	pca.Publickey = pk
-	pca.PrivateKey = sk
-	pca.TimeStamp = timeStamp
-	marshal, err := json.Marshal(pca)
-	if err != nil {
-		return C.CString("DIMSCASO-ERROR:GenRsa error:%s" + err.Error())
-	}
-	return C.CString(string(marshal))
-}
-
-//export  PlatformConfirm
-func PlatformConfirm(algo *C.char, privKey *C.char, confirmStr *C.char, hexStoreKey *C.char) *C.char {
+//export  PlatformConfirmX
+func PlatformConfirmX(algo *C.char, privKey *C.char, confirmStr *C.char, hexStoreKey *C.char) *C.char {
 	galgo := C.GoString(algo)
 	if galgo != "sm2" && galgo != "rsa" {
 		return C.CString("DIMSCASO-ERROR:only support rsa and sm2")
@@ -565,8 +529,8 @@ func PlatformConfirm(algo *C.char, privKey *C.char, confirmStr *C.char, hexStore
 	return C.CString(rsaSign)
 }
 
-//export  PlatformGrant
-func PlatformGrant(algo *C.char, publicKey *C.char, msgBase64 *C.char, signData *C.char) *C.char {
+//export  PlatformGrantX
+func PlatformGrantX(algo *C.char, publicKey *C.char, msgBase64 *C.char, signData *C.char) *C.char {
 	gsignData := C.GoString(signData)
 	galgo := C.GoString(algo)
 	if galgo != "sm2" && galgo != "rsa" {
@@ -591,3 +555,103 @@ func PlatformGrant(algo *C.char, publicKey *C.char, msgBase64 *C.char, signData 
 	}
 	return C.CString("DIMSCASO-Success")
 }
+
+//export    GenPlatformCA
+func GenPlatformCA(algo *C.char, hexStoreKey *C.char) *C.char {
+	galgo := C.GoString(algo)
+	if galgo != "sm2" && galgo != "rsa" {
+		return C.CString("DIMSCASO-ERROR:only support rsa and sm2")
+	}
+	ghexStoreKey := C.GoString(hexStoreKey)
+	var pca PlatformCA
+	if galgo == "sm2" {
+		pk, sk, timeStamp, err := encrypt.GenSm2C(ghexStoreKey)
+		if err != nil {
+			return C.CString("DIMSCASO-ERROR:GenSm2 error:%s" + err.Error())
+		}
+		pca.Publickey = pk
+		pca.PrivateKey = sk
+		pca.TimeStamp = timeStamp
+		marshal, err := json.Marshal(pca)
+		if err != nil {
+			return C.CString("DIMSCASO-ERROR:GenSm2 error:%s" + err.Error())
+		}
+		return C.CString(string(marshal))
+	}
+	pk, sk, timeStamp, err := encrypt.GenRsa()
+	if err != nil {
+		return C.CString("DIMSCASO-ERROR:GenRsa error:%s" + err.Error())
+	}
+	pca.Publickey = pk
+	pca.PrivateKey = sk
+	pca.TimeStamp = timeStamp
+	marshal, err := json.Marshal(pca)
+	if err != nil {
+		return C.CString("DIMSCASO-ERROR:GenRsa error:%s" + err.Error())
+	}
+	return C.CString(string(marshal))
+}
+
+// (平台授权)公钥加密
+
+//export  PlatGrant
+func PlatGrant(algo *C.char, platPublicKey *C.char, msgB64 *C.char) *C.char {
+	galgo := C.GoString(algo)
+	gplatPublicKey := C.GoString(platPublicKey)
+	gmsg := C.GoString(msgB64)
+	mmsg, err := base64.StdEncoding.DecodeString(gmsg)
+	if err != nil {
+		return C.CString("DIMSCASO-ERROR:base64 decode error:%s" + err.Error())
+	}
+	if galgo != "sm2" && galgo != "rsa" {
+		return C.CString("DIMSCASO-ERROR:only support rsa and sm2")
+	}
+	if galgo == "sm2" {
+		sm2Encrypt, err := encrypt.Sm2Encrypt(gplatPublicKey, mmsg)
+		if err != nil {
+			return C.CString("DIMSCASO-ERROR:Sm2Encrypt error:%s" + err.Error())
+		}
+		return C.CString(sm2Encrypt)
+	}
+	publicEncrypt, err := gorsa.PublicEncrypt(string(mmsg), gplatPublicKey)
+	if err != nil {
+		return C.CString("DIMSCASO-ERROR:RsaEncrypt error:%s" + err.Error())
+	}
+	return C.CString(publicEncrypt)
+}
+
+// PlatConfirm (平台授权)私钥解密加密
+
+//export  PlatConfirm
+func PlatConfirm(algo *C.char, platPrivateKey *C.char, cipherMsg *C.char, hexKeyStore *C.char) *C.char {
+	galgo := C.GoString(algo)
+	gplatPrivateKey := C.GoString(platPrivateKey)
+	gcipherMsg := C.GoString(cipherMsg)
+	ghexKeyStore := C.GoString(hexKeyStore)
+
+	if galgo != "sm2" && galgo != "rsa" {
+		return C.CString("DIMSCASO-ERROR:only support rsa and sm2")
+	}
+	if galgo == "sm2" {
+		tmpKey, err := hex.DecodeString(ghexKeyStore)
+		if err != nil {
+			return C.CString("DIMSCASO-ERROR:hex decode error")
+		}
+		if len(tmpKey) != 8 {
+			return C.CString("DIMSCASO-ERROR:key is 8byte")
+		}
+		sm2Decrypt, err := encrypt.Sm2DecryptC(gplatPrivateKey, []byte(gcipherMsg), ghexKeyStore)
+		if err != nil {
+			return C.CString("DIMSCASO-ERROR:Sm2Encrypt error:%s" + err.Error())
+		}
+		return C.CString(sm2Decrypt)
+	}
+	decrypt, err := gorsa.PriKeyDecrypt(gcipherMsg, gplatPrivateKey)
+	if err != nil {
+		return C.CString("DIMSCASO-ERROR: gorsa.PriKeyDecrypt error:%s" + err.Error())
+	}
+	toString := base64.StdEncoding.EncodeToString([]byte(decrypt))
+	return C.CString(toString)
+}
+
+func main() {}

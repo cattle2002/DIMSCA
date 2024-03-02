@@ -70,6 +70,29 @@ func Sm2Encrypt(pk string, data []byte) (string, error) {
 		return toString, nil
 	}
 }
+func Sm2DecryptC(sk string, data []byte, hexKey string) (string, error) {
+	decodeString, err := hex.DecodeString(string(data))
+	if err != nil {
+		return "", err
+	}
+	tmpKey, err := hex.DecodeString(hexKey)
+	if err != nil {
+		return "", err
+	}
+	privateKey, err := x509.ReadPrivateKeyFromPem([]byte(sk), tmpKey)
+	if err != nil {
+		return "", err
+	}
+	decrypt, err := sm2.Decrypt(privateKey, decodeString, sm2.C1C3C2)
+	if err != nil {
+		return "", err
+	} else {
+		//toString := string(decrypt)
+		toString := base64.StdEncoding.EncodeToString(decrypt)
+		return toString, nil
+	}
+}
+
 func Sm2Decrypt(sk string, data []byte) (string, error) {
 	decodeString, err := hex.DecodeString(string(data))
 	if err != nil {
