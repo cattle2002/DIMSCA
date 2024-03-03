@@ -28,7 +28,10 @@ func PrivateKey(w http.ResponseWriter, r *http.Request) {
 	var req LocalRequest
 	var res LocalResponse
 	all, err := io.ReadAll(r.Body)
-
+	if err != nil {
+		log.Logger.Errorf("read http msg from engine error:%s", err.Error())
+		return
+	}
 	err = json.Unmarshal(all, &req)
 	if err != nil {
 		log.Logger.Errorf("json marshal error:%s", err.Error())

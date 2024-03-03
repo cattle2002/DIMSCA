@@ -654,4 +654,4 @@ func PlatConfirm(algo *C.char, platPrivateKey *C.char, cipherMsg *C.char, hexKey
 	return C.CString(toString)
 }
 
-func main() {}
+//func main() {}

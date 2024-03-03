@@ -214,5 +214,7 @@ func main() {
 	//AsymmetricEncryptDoubleSign_test()
 	//te()
 	//plat_test()
-	plat_test2()
+	//plat_test2()
+	local := GetUserPublicKeyLocal(C.CString("zcl01"))
+	fmt.Println(C.GoString(local))
 }

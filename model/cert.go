@@ -17,22 +17,6 @@ func Create(user string, timestamp int64, pk string, sk string) error {
 	return tx.Error
 }
 
-// 先查询数据是否存在这条记录,如果不存在才插入数据
-//func CreatePlus(user string, timestamp int64, pk string, sk string) error {
-//	var cert Model
-//	tx := DB.Where("user = ? and timeStamp = ?", user, timestamp).Find(&cert)
-//	if tx.Error != nil {
-//		return tx.Error
-//	} else {
-//		if cert.User == user && cert.TimeStamp == timestamp {
-//			return nil
-//		} else {
-//			tx2 := Create(user, timestamp, pk, sk)
-//			return tx2
-//		}
-//	}
-//}
-
 // CreateWrapper 插入记录到数据库的时候，先记录是否存在这条数据才插入[用户公私钥专用]
 func CreateWrapper(user string, timestamp int64, pk string, sk string) error {
 	find, err := Find(user, timestamp, pk, sk)

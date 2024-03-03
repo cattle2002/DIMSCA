@@ -42,6 +42,40 @@ func ConfirmPermission(privPem *C.char, cipherptbscStr *C.char) *C.char {
 	return C.CString(encrypt)
 }
 
+//export GetUserPublicKeyLocal
+func GetUserPublicKeyLocal(user *C.char) *C.char {
+	guser := C.GoString(user)
+	if guser == "" {
+		return C.CString("DIMSCASO-ERROR:user is empty")
+	}
+	var req service.TmpPublicKeyRequest
+	//var ress service.TmpPublicKeyResponse
+	req.Username = guser
+	msg, err := json.Marshal(req)
+	if err != nil {
+		return C.CString("DIMSCASO-ERROR:json marshal msg error:%s" + err.Error())
+	}
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	url := "http://127.0.0.1:5517/api/v1/pk"
+	reqc, err := http.NewRequest("POST", url, bytes.NewReader(msg))
+	if err != nil {
+		return C.CString("DIMSCASO-ERROR:New Http Request Error:" + err.Error())
+	}
+	reqc.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(reqc)
+	if err != nil {
+		return C.CString("DIMSCASO-ERROR:Send Request Error:%s" + err.Error())
+	}
+	defer resp.Body.Close()
+	b2, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return C.CString("DIMSCASO-ERROR:Read Resp Body Error:" + err.Error())
+	}
+	return C.CString(string(b2))
+}
+
 //export  GetUserPrivateKeyLocalCa
 func GetUserPrivateKeyLocalCa(user *C.char, password *C.char) *C.char {
 	guser := C.GoString(user)
@@ -156,3 +190,6 @@ func AsymmetricDecryptDouble(pk *C.char, sk *C.char, cipherHexSymmetricKey *C.ch
 	toString := base64.StdEncoding.EncodeToString([]byte(publicDecrypt))
 	return C.CString(toString)
 }
+func main() {}
+
+//go build  -o libca.dll  -buildmode=c-shared main_lib.go
